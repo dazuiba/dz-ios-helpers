@@ -7,6 +7,96 @@
 //
 
 #import "Models.h"
+#import "AFJSONUtilities.h"
+#import "GTMBase64.h"
+
+
+#define kDftKeyLoginUserDict @"login_user_dict"
+
+@implementation User
+@synthesize name,avatar,requestToken;
+static User *_currentUser = nil;
+
++ (User *)current{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{        
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSDictionary *uinfo = [defaults objectForKey:kDftKeyLoginUserDict];
+        if ([uinfo isKindOfClass:[NSDictionary class]]) {
+            _currentUser = [[User alloc] initWithDict:uinfo];
+        }
+    });
+    
+    return _currentUser;
+}
+
++ (User *)loginWithURL:(NSURL *)url{
+    NSError *error = nil;
+    NSDictionary *userInfo = AFJSONDecode([GTMBase64 webSafeDecodeString:url.query],&error);
+    if(!userInfo) {
+        return nil;
+    }
+    
+    //checking values    
+    User *loginUser = [[[User alloc] initWithDict:userInfo] autorelease];
+    if (![loginUser isValidUser:YES]) {
+        return nil;
+    }
+    
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setObject:userInfo forKey:kDftKeyLoginUserDict];
+    [self setCurrentUser:loginUser];
+    return loginUser;
+}
+
++ (void)logout{
+    [self setCurrentUser:nil];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults removeObjectForKey:kDftKeyLoginUserDict];
+    [defaults synchronize];
+}
+
++ (void)setCurrentUser:(User *)user{
+    GH_SAFE_RELEASE(_currentUser);
+    _currentUser = [user retain];
+}
+
+- (BOOL)isValidUser:(BOOL)checkLogin{
+    BOOL r = self.entryID>0 && ![self.name gh_isBlank];
+    
+    if (checkLogin) {
+        r = r&&![self.requestToken gh_isBlank];
+    }
+    return r;
+    
+}
+
+- (NSMutableDictionary *)authParams:(NSDictionary *)params{
+    if ([self isValidUser:YES]) {
+        return $mdict($str(@"%@----%d",self.requestToken,self.entryID),@"j");
+    }
+    return nil;
+}
+
+
+- (NSString *)name{
+    return [self.dict objectForKey:@"name"];
+}
+
+- (NSString *) avatar {
+    return [self.dict objectForKey:@"avatar"];
+}
+
+- (NSString *)requestToken{
+    return [self.dict objectForKey:@"app_token"];
+}
+
+- (void)dealloc {
+    [super dealloc];
+}
+@end
+
+
 @implementation HBDictBase
 @synthesize dict;
 
