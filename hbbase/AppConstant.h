@@ -11,7 +11,7 @@
 #define kApiBaseURLString @"http://api.3gcst.com"
 #define kBaseURLString kApiBaseURLString
 
-#define kNewsURLString @"http://cst123.cn/news/"
+#define kNewsURLString @"http://www.3gcst.com/news/"
 
 #define kAboutURL $str(@"%@/api/static/about_iphone", kBaseURLString
 #define kHelpURL $str(@"%@/api/static/help", kBaseURLString)
