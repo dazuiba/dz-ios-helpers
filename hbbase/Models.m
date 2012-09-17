@@ -73,9 +73,11 @@ static User *_currentUser = nil;
 
 - (NSMutableDictionary *)authParams:(NSDictionary *)params{
     if ([self isValidUser:YES]) {
-        return $mdict($str(@"%@----%d",self.requestToken,self.entryID),@"j");
+        NSMutableDictionary *dict = $mdict($str(@"%@----%d",self.requestToken,self.entryID),@"j");
+        [dict addEntriesFromDictionary:params];
+        return dict;
     }
-    return nil;
+    return params;
 }
 
 
